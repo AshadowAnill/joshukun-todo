@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="助手くん（こよ活）のためのスタンプ式チェックリスト。毎日 JST 0時にリセット。">
+<meta name="theme-color" content="#ffd6e6">
+<title>助手くんやることリスト</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink-bg-1: #fff5fa;
+    --pink-bg-2: #ffe1ed;
+    --pink-dot: rgba(255, 105, 180, 0.07);
+    --pink-primary: #ff4d94;
+    --pink-soft: #ff70a8;
+    --pink-frame: #ffb3d1;
+    --pink-frame-fill: #fff8fb;
+    --pink-row-bg: #fffafc;
+    --pink-row-hover: #fff0f6;
+    --pink-row-active: #ffe5ee;
+    --text-dark: #4d3a44;
+    --text-muted: #8a6b76;
+    --text-foot: #b89aa3;
+    --warn-bg: #fff3cd;
+    --warn-text: #8a6500;
+    --card-shadow:
+      0 12px 40px rgba(255, 112, 168, 0.14),
+      0 2px 8px rgba(255, 112, 168, 0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'M PLUS Rounded 1c', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    color: var(--text-dark);
+    background:
+      radial-gradient(circle at 1px 1px, var(--pink-dot) 1px, transparent 0) 0 0 / 18px 18px,
+      linear-gradient(180deg, var(--pink-bg-1) 0%, var(--pink-bg-2) 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    padding: 28px 16px 40px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .container {
+    max-width: 500px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 22px;
+    padding: 32px 24px 28px;
+    box-shadow: var(--card-shadow);
+    position: relative;
+    /* subtle inner frame to feel like a notebook page */
+    border: 1px solid #ffe5ee;
+  }
+
+  /* corner decorative dots — like a tape on a notebook */
+  .container::before,
+  .container::after {
+    content: '';
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #ffd0e0;
+    top: 14px;
+  }
+  .container::before { left: 16px; }
+  .container::after  { right: 16px; }
+
+  .warning {
+    background: var(--warn-bg);
+    color: var(--warn-text);
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  .warning[hidden] { display: none; }
+
+  .header {
+    text-align: center;
+    margin-bottom: 22px;
+    padding-top: 4px;
+  }
+
+  .title {
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--pink-primary);
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    margin-bottom: 10px;
+    /* tiny heart decoration */
+    display: inline-block;
+    position: relative;
+  }
+  .title::before,
+  .title::after {
+    content: '♡';
+    color: var(--pink-soft);
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 8px;
+    vertical-align: 4px;
+  }
+
+  .date {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+
+  .list {
+    list-style: none;
+    margin-top: 4px;
+  }
+
+  .item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    background: var(--pink-row-bg);
+    border-radius: 14px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 76px;
+    transition: background-color 150ms ease, transform 150ms ease;
+    outline: none;
+  }
+  .item:last-child { margin-bottom: 0; }
+
+  @media (hover: hover) {
+    .item:hover { background: var(--pink-row-hover); }
+  }
+  .item:active { background: var(--pink-row-active); }
+
+  .item:focus-visible {
+    box-shadow: 0 0 0 3px rgba(255, 77, 148, 0.35);
+  }
+
+  .frame {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border: 2px dashed var(--pink-frame);
+    border-radius: 10px;
+    background: var(--pink-frame-fill);
+    flex-shrink: 0;
+  }
+
+  .stamp {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 82px;
+    height: 82px;
+    background-image: url('stamp.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none;
+    transform: translate(-50%, -50%) rotate(-9deg) scale(0);
+    /* spring-like overshoot */
+    transition: transform 320ms cubic-bezier(0.34, 1.7, 0.5, 1);
+    will-change: transform;
+    z-index: 1;
+  }
+
+  .item.checked .stamp {
+    transform: translate(-50%, -50%) rotate(-9deg) scale(1);
+  }
+
+  .label {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-dark);
+    line-height: 1.45;
+    letter-spacing: 0.02em;
+    flex: 1;
+  }
+
+  /* dim the text slightly when checked, so the stamp feels like the dominant element */
+  .item.checked .label {
+    color: var(--text-muted);
+    transition: color 200ms ease 80ms;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 22px;
+    padding-top: 14px;
+    border-top: 1px dashed #ffd6e6;
+    font-size: 11px;
+    color: var(--text-foot);
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 380px) {
+    body { padding: 18px 10px 30px; }
+    .container { padding: 26px 18px 22px; border-radius: 18px; }
+    .title { font-size: 22px; }
+    .title::before, .title::after { font-size: 14px; margin: 0 6px; }
+    .label { font-size: 15px; }
+    .frame { width: 50px; height: 50px; }
+    .stamp { width: 74px; height: 74px; }
+    .item { min-height: 68px; padding: 10px 12px; gap: 12px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stamp { transition: transform 1ms linear; }
+    .item.checked .label { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <main class="container">
+    <div class="warning" id="warning" hidden>
+      ⚠ このブラウザではチェック状態が保存されません（プライベートブラウジング等）
+    </div>
+
+    <header class="header">
+      <h1 class="title">助手くんやることリスト</h1>
+      <p class="date" id="date"></p>
+    </header>
+
+    <ul class="list" id="list"></ul>
+
+    <footer class="footer">
+      非公式ファンメイドサイト
+    </footer>
+  </main>
+
+<script>
+(function () {
+  'use strict';
+
+  const ITEMS = [
+    'こよの曲を聴く',
+    'こよのShorts見る',
+    '「こよちゃん大好き！」と言う',
+    'こよのコト考える',
+    'こよのアーカイブ見る'
+  ];
+
+  const STORAGE_KEY = 'joshukun-todo';
+  const STORAGE_VERSION = 1;
+
+  let state = null;
+  let storageAvailable = true;
+
+  // ====== JST date helpers ======
+  // JST = UTC+9 fixed (no DST). Shift epoch by +9h then read UTC components.
+  function getJSTParts() {
+    const shifted = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    return {
+      y:   shifted.getUTCFullYear(),
+      m:   shifted.getUTCMonth() + 1,
+      d:   shifted.getUTCDate(),
+      dow: shifted.getUTCDay()
+    };
+  }
+
+  function getJSTDateString() {
+    const p = getJSTParts();
+    return p.y + '-' + String(p.m).padStart(2, '0') + '-' + String(p.d).padStart(2, '0');
+  }
+
+  function getJSTDateDisplay() {
+    const p = getJSTParts();
+    const dows = ['日', '月', '火', '水', '木', '金', '土'];
+    return p.y + '年' + p.m + '月' + p.d + '日（' + dows[p.dow] + '）';
+  }
+
+  // ====== Storage ======
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (
+          parsed &&
+          parsed.v === STORAGE_VERSION &&
+          typeof parsed.date === 'string' &&
+          Array.isArray(parsed.checked) &&
+          parsed.checked.length === ITEMS.length &&
+          parsed.date === getJSTDateString()
+        ) {
+          state = parsed;
+          return;
+        }
+      }
+    } catch (e) {
+      storageAvailable = false;
+    }
+    // fresh start (new day, missing data, corrupted, or unavailable storage)
+    state = {
+      v: STORAGE_VERSION,
+      date: getJSTDateString(),
+      checked: ITEMS.map(function () { return false; })
+    };
+    saveState();
+  }
+
+  function saveState() {
+    if (!storageAvailable) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      storageAvailable = false;
+      showWarning();
+    }
+  }
+
+  function showWarning() {
+    const w = document.getElementById('warning');
+    if (w) w.hidden = false;
+  }
+
+  // ====== Render ======
+  function updateDateDisplay() {
+    const el = document.getElementById('date');
+    if (el) el.textContent = getJSTDateDisplay();
+  }
+
+  function render() {
+    updateDateDisplay();
+
+    const list = document.getElementById('list');
+    list.textContent = ''; // clear
+
+    ITEMS.forEach(function (label, i) {
+      const li = document.createElement('li');
+      li.className = 'item' + (state.checked[i] ? ' checked' : '');
+      li.setAttribute('role', 'checkbox');
+      li.setAttribute('aria-checked', state.checked[i] ? 'true' : 'false');
+      li.setAttribute('tabindex', '0');
+      li.setAttribute('aria-label', label);
+
+      const frame = document.createElement('div');
+      frame.className = 'frame';
+      const stamp = document.createElement('div');
+      stamp.className = 'stamp';
+      frame.appendChild(stamp);
+
+      const labelEl = document.createElement('div');
+      labelEl.className = 'label';
+      labelEl.textContent = label;
+
+      li.appendChild(frame);
+      li.appendChild(labelEl);
+
+      function toggle() {
+        state.checked[i] = !state.checked[i];
+        saveState();
+        if (state.checked[i]) {
+          li.classList.add('checked');
+          li.setAttribute('aria-checked', 'true');
+        } else {
+          li.classList.remove('checked');
+          li.setAttribute('aria-checked', 'false');
+        }
+      }
+
+      li.addEventListener('click', toggle);
+      li.addEventListener('keydown', function (e) {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          toggle();
+        }
+      });
+
+      list.appendChild(li);
+    });
+  }
+
+  // ====== Daily reset check ======
+  function checkDateChange() {
+    const today = getJSTDateString();
+    if (!state || state.date !== today) {
+      state = {
+        v: STORAGE_VERSION,
+        date: today,
+        checked: ITEMS.map(function () { return false; })
+      };
+      saveState();
+      render();
+    }
+  }
+
+  // ====== Init ======
+  function init() {
+    loadState();
+    if (!storageAvailable) showWarning();
+    render();
+
+    // Periodic check catches midnight rollover and tab wake-up.
+    setInterval(checkDateChange, 30 * 1000);
+
+    // Also check when the tab becomes visible again.
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) checkDateChange();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
