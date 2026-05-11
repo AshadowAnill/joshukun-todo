@@ -81,9 +81,21 @@ localStorage に格納される v2 データ：
 
 ## 免責事項
 
-This is an **unofficial fan-made site**. Not affiliated with, endorsed by, or sponsored by Cover Corp. / hololive production / Hakui Koyori.
+This is an unofficial fan-made site. Not affiliated with, endorsed by, or sponsored by Cover Corp. / hololive production / Hakui Koyori.
 
 本サイトは非公式・非営利のファンメイドコンテンツです。カバー株式会社、ホロライブプロダクション、博衣こより氏とは一切関係ありません。
+
+本サイトは、カバー株式会社の「二次創作ガイドライン」に基づいて制作されています。
+[https://hololivepro.com/terms/](https://hololivepro.com/terms/)
+
+掲載されている名称・画像・関連権利等は各権利者に帰属します。
+
+## 使用フォント
+
+* [M PLUS Rounded 1c](https://fonts.google.com/specimen/M+PLUS+Rounded+1c)
+
+フォントは Google Fonts 経由で読み込まれます。
+フォントの権利は制作者に帰属します。
 
 ## ライセンス
 
