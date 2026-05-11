@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="助手くん（こよ活）のためのスタンプ式チェックリスト。毎日 JST 0時にリセット。">
+<meta name="description" content="助手くんやることリスト：こよ活チェックリスト＋スタンプ帳">
 <meta name="theme-color" content="#ffd6e6">
 <title>助手くんやることリスト</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,18 +21,22 @@
     --pink-row-bg: #fffafc;
     --pink-row-hover: #fff0f6;
     --pink-row-active: #ffe5ee;
+    --pink-tab-inactive: #ffeaf2;
+    --pink-tab-border: #ffd0e0;
+    --pink-divider: #ffd6e6;
     --text-dark: #4d3a44;
     --text-muted: #8a6b76;
     --text-foot: #b89aa3;
     --warn-bg: #fff3cd;
     --warn-text: #8a6500;
+    --wd-sat: #6694c7;
+    --wd-sun: #cc5e8c;
     --card-shadow:
       0 12px 40px rgba(255, 112, 168, 0.14),
       0 2px 8px rgba(255, 112, 168, 0.06);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   html, body { height: 100%; }
 
   body {
@@ -56,11 +60,9 @@
     padding: 32px 24px 28px;
     box-shadow: var(--card-shadow);
     position: relative;
-    /* subtle inner frame to feel like a notebook page */
     border: 1px solid #ffe5ee;
   }
 
-  /* corner decorative dots — like a tape on a notebook */
   .container::before,
   .container::after {
     content: '';
@@ -80,14 +82,14 @@
     border-radius: 10px;
     margin-bottom: 16px;
     font-size: 13px;
-    font-weight: 400;
     line-height: 1.5;
   }
   .warning[hidden] { display: none; }
 
+  /* === Header === */
   .header {
     text-align: center;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
     padding-top: 4px;
   }
 
@@ -98,7 +100,6 @@
     letter-spacing: 0.04em;
     line-height: 1.2;
     margin-bottom: 10px;
-    /* tiny heart decoration */
     display: inline-block;
     position: relative;
   }
@@ -119,10 +120,82 @@
     letter-spacing: 0.06em;
   }
 
-  .list {
-    list-style: none;
-    margin-top: 4px;
+  /* === Tabs === */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    padding: 0 8px;
+    margin-bottom: 0;
+    position: relative;
+    z-index: 1;
   }
+
+  .tab {
+    flex: 1;
+    padding: 10px 12px;
+    background: var(--pink-tab-inactive);
+    border: 1.5px solid var(--pink-tab-border);
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease, transform 100ms ease;
+    -webkit-tap-highlight-color: transparent;
+    letter-spacing: 0.04em;
+  }
+
+  .tab:hover {
+    background: #ffe0ec;
+    color: var(--pink-primary);
+  }
+
+  .tab.active {
+    background: #fffafc;
+    color: var(--pink-primary);
+    border-color: var(--pink-soft);
+    /* visually merge with panel below */
+    margin-bottom: -1.5px;
+    padding-bottom: 11.5px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .tab:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 77, 148, 0.35);
+  }
+
+  /* === Panels === */
+  .panels {
+    background: #fffafc;
+    border: 1.5px solid var(--pink-soft);
+    border-radius: 14px;
+    border-top-left-radius: 0;
+    padding: 16px 14px;
+    position: relative;
+    z-index: 0;
+  }
+
+  .panels.right-active {
+    border-top-left-radius: 14px;
+    border-top-right-radius: 0;
+  }
+
+  .panel { display: none; }
+  .panel.active {
+    display: block;
+    animation: panel-in 200ms ease-out;
+  }
+  @keyframes panel-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === Todo list === */
+  .list { list-style: none; }
 
   .item {
     position: relative;
@@ -131,22 +204,20 @@
     gap: 16px;
     padding: 12px 14px;
     margin-bottom: 10px;
-    background: var(--pink-row-bg);
+    background: #ffffff;
     border-radius: 14px;
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     min-height: 76px;
-    transition: background-color 150ms ease, transform 150ms ease;
+    transition: background-color 150ms ease;
     outline: none;
   }
   .item:last-child { margin-bottom: 0; }
-
   @media (hover: hover) {
     .item:hover { background: var(--pink-row-hover); }
   }
   .item:active { background: var(--pink-row-active); }
-
   .item:focus-visible {
     box-shadow: 0 0 0 3px rgba(255, 77, 148, 0.35);
   }
@@ -173,7 +244,6 @@
     background-position: center;
     pointer-events: none;
     transform: translate(-50%, -50%) rotate(-9deg) scale(0);
-    /* spring-like overshoot */
     transition: transform 320ms cubic-bezier(0.34, 1.7, 0.5, 1);
     will-change: transform;
     z-index: 1;
@@ -191,18 +261,98 @@
     letter-spacing: 0.02em;
     flex: 1;
   }
-
-  /* dim the text slightly when checked, so the stamp feels like the dominant element */
   .item.checked .label {
     color: var(--text-muted);
     transition: color 200ms ease 80ms;
   }
 
+  /* === Calendar === */
+  .calendar-wrap { padding: 2px 0; }
+
+  .weekday-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 6px;
+    padding: 0 2px;
+  }
+
+  .wd {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    padding: 2px 0;
+  }
+  .wd-sat { color: var(--wd-sat); }
+  .wd-sun { color: var(--wd-sun); }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    padding: 0 2px;
+  }
+
+  .cal-cell {
+    aspect-ratio: 1 / 1;
+    position: relative;
+    border: 1.5px solid var(--pink-frame);
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 3px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    user-select: none;
+    overflow: visible;
+    letter-spacing: 0;
+    line-height: 1;
+  }
+
+  .cal-cell.today {
+    border: 2.5px solid var(--pink-primary);
+    padding: 2px 3px;
+    color: var(--pink-primary);
+  }
+
+  .cal-date {
+    position: relative;
+    z-index: 0;
+  }
+
+  .cal-stamp { display: none; }
+
+  .cal-cell.stamped .cal-stamp {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 110%;
+    height: 110%;
+    background-image: url('stamp.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    transform: translate(-50%, -50%) rotate(-9deg);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .cal-cell.stamped.animate .cal-stamp {
+    animation: stamp-drop 360ms cubic-bezier(0.34, 1.7, 0.5, 1);
+  }
+  @keyframes stamp-drop {
+    0%   { transform: translate(-50%, -50%) rotate(-9deg) scale(0); }
+    100% { transform: translate(-50%, -50%) rotate(-9deg) scale(1); }
+  }
+
+  /* === Footer === */
   .footer {
     text-align: center;
     margin-top: 22px;
     padding-top: 14px;
-    border-top: 1px dashed #ffd6e6;
+    border-top: 1px dashed var(--pink-divider);
     font-size: 11px;
     color: var(--text-foot);
     font-weight: 400;
@@ -210,19 +360,33 @@
     line-height: 1.6;
   }
 
+  /* === Mobile === */
   @media (max-width: 380px) {
     body { padding: 18px 10px 30px; }
-    .container { padding: 26px 18px 22px; border-radius: 18px; }
+    .container { padding: 26px 16px 22px; border-radius: 18px; }
     .title { font-size: 22px; }
     .title::before, .title::after { font-size: 14px; margin: 0 6px; }
+    .date { font-size: 13px; }
+
+    .tab { padding: 9px 8px; font-size: 13px; }
+    .panels { padding: 12px 8px; }
+
     .label { font-size: 15px; }
     .frame { width: 50px; height: 50px; }
     .stamp { width: 74px; height: 74px; }
     .item { min-height: 68px; padding: 10px 12px; gap: 12px; }
+
+    .weekday-header { gap: 3px; padding: 0 1px; }
+    .cal-grid { gap: 3px; padding: 0 1px; }
+    .wd { font-size: 11px; }
+    .cal-cell { font-size: 9.5px; padding: 2px 3px; }
+    .cal-cell.today { padding: 1px 2px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .stamp { transition: transform 1ms linear; }
+    .stamp,
+    .cal-cell.stamped.animate .cal-stamp { transition: none; animation: none; }
+    .panel.active { animation: none; }
     .item.checked .label { transition: none; }
   }
 </style>
@@ -238,7 +402,31 @@
       <p class="date" id="date"></p>
     </header>
 
-    <ul class="list" id="list"></ul>
+    <nav class="tabs" role="tablist" aria-label="表示切替">
+      <button class="tab active" role="tab" data-tab="todo"  aria-selected="true"  aria-controls="panel-todo">やること</button>
+      <button class="tab"        role="tab" data-tab="stamp" aria-selected="false" aria-controls="panel-stamp">スタンプ帳</button>
+    </nav>
+
+    <div class="panels" id="panels">
+      <section class="panel active" id="panel-todo" data-tab="todo" role="tabpanel">
+        <ul class="list" id="list"></ul>
+      </section>
+
+      <section class="panel" id="panel-stamp" data-tab="stamp" role="tabpanel">
+        <div class="calendar-wrap">
+          <div class="weekday-header" aria-hidden="true">
+            <span class="wd">月</span>
+            <span class="wd">火</span>
+            <span class="wd">水</span>
+            <span class="wd">木</span>
+            <span class="wd">金</span>
+            <span class="wd wd-sat">土</span>
+            <span class="wd wd-sun">日</span>
+          </div>
+          <div class="cal-grid" id="calendar-grid"></div>
+        </div>
+      </section>
+    </div>
 
     <footer class="footer">
       非公式ファンメイドサイト
@@ -249,6 +437,7 @@
 (function () {
   'use strict';
 
+  // ====== Config (edit here to change items or calendar range) ======
   const ITEMS = [
     'こよの曲を聴く',
     'こよのShorts見る',
@@ -256,22 +445,28 @@
     'こよのコト考える',
     'こよのアーカイブ見る'
   ];
+  const START_DATE = '2026-05-11'; // inclusive, should be Monday
+  const END_DATE   = '2026-06-14'; // inclusive, should be Sunday
 
   const STORAGE_KEY = 'joshukun-todo';
-  const STORAGE_VERSION = 1;
+  const STORAGE_VERSION = 2;
+  const TAB_TODO = 'todo';
+  const TAB_STAMP = 'stamp';
+  const AUTO_SWITCH_DELAY_MS = 400; // wait for stamp animation before switching
+  // ===================================================================
 
   let state = null;
+  let activeTab = TAB_TODO;
   let storageAvailable = true;
 
-  // ====== JST date helpers ======
-  // JST = UTC+9 fixed (no DST). Shift epoch by +9h then read UTC components.
+  // ====== JST date helpers (no DST, fixed UTC+9) ======
   function getJSTParts() {
     const shifted = new Date(Date.now() + 9 * 60 * 60 * 1000);
     return {
       y:   shifted.getUTCFullYear(),
       m:   shifted.getUTCMonth() + 1,
       d:   shifted.getUTCDate(),
-      dow: shifted.getUTCDay()
+      dow: shifted.getUTCDay() // 0=Sun..6=Sat
     };
   }
 
@@ -286,33 +481,123 @@
     return p.y + '年' + p.m + '月' + p.d + '日（' + dows[p.dow] + '）';
   }
 
-  // ====== Storage ======
-  function loadState() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (
-          parsed &&
-          parsed.v === STORAGE_VERSION &&
-          typeof parsed.date === 'string' &&
-          Array.isArray(parsed.checked) &&
-          parsed.checked.length === ITEMS.length &&
-          parsed.date === getJSTDateString()
-        ) {
-          state = parsed;
-          return;
-        }
-      }
-    } catch (e) {
-      storageAvailable = false;
+  // ====== Calendar range helpers ======
+  function parseDateString(s) {
+    const parts = s.split('-');
+    return new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
+  }
+  function formatDate(d) {
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+  function isInCalendarRange(dateStr) {
+    return dateStr >= START_DATE && dateStr <= END_DATE;
+  }
+  function getCalendarDates() {
+    const start = parseDateString(START_DATE);
+    const end = parseDateString(END_DATE);
+    const out = [];
+    let cur = start;
+    while (cur.getTime() <= end.getTime()) {
+      out.push(formatDate(cur));
+      cur = new Date(cur.getTime() + 86400000); // +1 day
     }
-    // fresh start (new day, missing data, corrupted, or unavailable storage)
-    state = {
+    return out;
+  }
+
+  // ====== Storage & Migration ======
+  function makeFreshState(carryCalendar) {
+    return {
       v: STORAGE_VERSION,
       date: getJSTDateString(),
-      checked: ITEMS.map(function () { return false; })
+      checked: ITEMS.map(function () { return false; }),
+      switched: false,
+      calendar: carryCalendar || {}
     };
+  }
+
+  function migrateV1ToV2(v1) {
+    if (
+      !v1 ||
+      typeof v1.date !== 'string' ||
+      !Array.isArray(v1.checked) ||
+      v1.checked.length !== ITEMS.length
+    ) {
+      return makeFreshState();
+    }
+    const today = getJSTDateString();
+    const allChecked = v1.checked.every(function (c) { return c === true; });
+
+    const calendar = {};
+    // Preserve the v1 achievement on the calendar if it was a full 5-stamp day within range
+    if (allChecked && isInCalendarRange(v1.date)) {
+      calendar[v1.date] = true;
+    }
+
+    if (v1.date === today) {
+      return {
+        v: STORAGE_VERSION,
+        date: today,
+        checked: v1.checked.slice(),
+        switched: allChecked,
+        calendar: calendar
+      };
+    }
+    return {
+      v: STORAGE_VERSION,
+      date: today,
+      checked: ITEMS.map(function () { return false; }),
+      switched: false,
+      calendar: calendar
+    };
+  }
+
+  function validateV2(parsed) {
+    if (
+      !parsed ||
+      parsed.v !== STORAGE_VERSION ||
+      typeof parsed.date !== 'string' ||
+      !Array.isArray(parsed.checked) ||
+      parsed.checked.length !== ITEMS.length ||
+      typeof parsed.switched !== 'boolean' ||
+      typeof parsed.calendar !== 'object' ||
+      parsed.calendar === null
+    ) return null;
+    return parsed;
+  }
+
+  function loadState() {
+    let raw = null;
+    try { raw = localStorage.getItem(STORAGE_KEY); }
+    catch (e) { storageAvailable = false; }
+
+    if (raw) {
+      let parsed = null;
+      try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
+
+      if (parsed && parsed.v === 1) {
+        state = migrateV1ToV2(parsed);
+        saveState();
+        return;
+      }
+
+      const valid = validateV2(parsed);
+      if (valid) {
+        const today = getJSTDateString();
+        if (valid.date === today) {
+          state = valid;
+          return;
+        }
+        // Different day: reset checks/switched, preserve calendar
+        state = makeFreshState(valid.calendar);
+        saveState();
+        return;
+      }
+    }
+
+    state = makeFreshState();
     saveState();
   }
 
@@ -337,11 +622,9 @@
     if (el) el.textContent = getJSTDateDisplay();
   }
 
-  function render() {
-    updateDateDisplay();
-
+  function renderTodo() {
     const list = document.getElementById('list');
-    list.textContent = ''; // clear
+    list.textContent = '';
 
     ITEMS.forEach(function (label, i) {
       const li = document.createElement('li');
@@ -366,7 +649,6 @@
 
       function toggle() {
         state.checked[i] = !state.checked[i];
-        saveState();
         if (state.checked[i]) {
           li.classList.add('checked');
           li.setAttribute('aria-checked', 'true');
@@ -374,6 +656,8 @@
           li.classList.remove('checked');
           li.setAttribute('aria-checked', 'false');
         }
+        saveState();
+        checkAchievement(true);
       }
 
       li.addEventListener('click', toggle);
@@ -388,15 +672,97 @@
     });
   }
 
+  function renderCalendar() {
+    const grid = document.getElementById('calendar-grid');
+    grid.textContent = '';
+
+    const dates = getCalendarDates();
+    const today = getJSTDateString();
+
+    dates.forEach(function (dateStr) {
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell';
+      if (dateStr === today) cell.classList.add('today');
+      if (state.calendar[dateStr]) cell.classList.add('stamped');
+
+      const labelEl = document.createElement('span');
+      labelEl.className = 'cal-date';
+      const parts = dateStr.split('-');
+      labelEl.textContent = (+parts[1]) + '/' + (+parts[2]);
+      cell.appendChild(labelEl);
+
+      const stampEl = document.createElement('span');
+      stampEl.className = 'cal-stamp';
+      cell.appendChild(stampEl);
+
+      grid.appendChild(cell);
+    });
+  }
+
+  function render() {
+    updateDateDisplay();
+    renderTodo();
+    renderCalendar();
+  }
+
+  // ====== Tab switching ======
+  function setActiveTab(tabId) {
+    if (activeTab === tabId) return;
+    activeTab = tabId;
+
+    document.querySelectorAll('.tab').forEach(function (t) {
+      const isActive = t.dataset.tab === tabId;
+      t.classList.toggle('active', isActive);
+      t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    const panels = document.getElementById('panels');
+    panels.classList.toggle('right-active', tabId === TAB_STAMP);
+
+    document.querySelectorAll('.panel').forEach(function (p) {
+      p.classList.toggle('active', p.dataset.tab === tabId);
+    });
+  }
+
+  function animateTodayStamp() {
+    const cell = document.querySelector('.cal-cell.today.stamped');
+    if (!cell) return;
+    cell.classList.remove('animate');
+    void cell.offsetWidth; // force reflow so animation restarts
+    cell.classList.add('animate');
+    setTimeout(function () { cell.classList.remove('animate'); }, 400);
+  }
+
+  // ====== Achievement detection ======
+  function checkAchievement(triggeredByClick) {
+    if (!state || state.switched) return;
+    const allChecked = state.checked.every(function (c) { return c === true; });
+    if (!allChecked) return;
+
+    state.switched = true;
+    const today = getJSTDateString();
+    let recorded = false;
+    if (isInCalendarRange(today)) {
+      state.calendar[today] = true;
+      recorded = true;
+    }
+    saveState();
+
+    renderCalendar();
+
+    if (triggeredByClick && recorded) {
+      setTimeout(function () {
+        setActiveTab(TAB_STAMP);
+        requestAnimationFrame(animateTodayStamp);
+      }, AUTO_SWITCH_DELAY_MS);
+    }
+  }
+
   // ====== Daily reset check ======
   function checkDateChange() {
     const today = getJSTDateString();
     if (!state || state.date !== today) {
-      state = {
-        v: STORAGE_VERSION,
-        date: today,
-        checked: ITEMS.map(function () { return false; })
-      };
+      state = makeFreshState(state ? state.calendar : {});
       saveState();
       render();
     }
@@ -408,10 +774,13 @@
     if (!storageAvailable) showWarning();
     render();
 
-    // Periodic check catches midnight rollover and tab wake-up.
-    setInterval(checkDateChange, 30 * 1000);
+    document.querySelectorAll('.tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        setActiveTab(btn.dataset.tab);
+      });
+    });
 
-    // Also check when the tab becomes visible again.
+    setInterval(checkDateChange, 30 * 1000);
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) checkDateChange();
     });
