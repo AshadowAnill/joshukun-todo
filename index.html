@@ -156,7 +156,6 @@
     background: #fffafc;
     color: var(--pink-primary);
     border-color: var(--pink-soft);
-    /* visually merge with panel below */
     margin-bottom: -1.5px;
     padding-bottom: 11.5px;
     position: relative;
@@ -308,6 +307,7 @@
     overflow: visible;
     letter-spacing: 0;
     line-height: 1;
+    transition: background-color 150ms ease, border-color 150ms ease, transform 80ms ease;
   }
 
   .cal-cell.today {
@@ -316,6 +316,18 @@
     color: var(--pink-primary);
   }
 
+  .cal-cell.clickable {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (hover: hover) {
+    .cal-cell.clickable:hover {
+      background: #fff0f6;
+      border-color: var(--pink-soft);
+    }
+  }
+  .cal-cell.clickable:active { transform: scale(0.95); }
+
   .cal-date {
     position: relative;
     z-index: 0;
@@ -323,7 +335,8 @@
 
   .cal-stamp { display: none; }
 
-  .cal-cell.stamped .cal-stamp {
+  /* Pink stamp: native PNG color */
+  .cal-cell.stamped-pink .cal-stamp {
     display: block;
     position: absolute;
     top: 50%;
@@ -339,13 +352,104 @@
     z-index: 1;
   }
 
-  .cal-cell.stamped.animate .cal-stamp {
+  /* Pink stamp drop-in animation (auto-switch from todo + manual past-day stamp) */
+  .cal-cell.stamped-pink.animate .cal-stamp {
     animation: stamp-drop 360ms cubic-bezier(0.34, 1.7, 0.5, 1);
   }
   @keyframes stamp-drop {
     0%   { transform: translate(-50%, -50%) rotate(-9deg) scale(0); }
     100% { transform: translate(-50%, -50%) rotate(-9deg) scale(1); }
   }
+
+  /* === Modal === */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(50, 30, 40, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+    animation: overlay-in 180ms ease-out;
+  }
+  .modal-overlay[hidden] { display: none; }
+  @keyframes overlay-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .modal {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 26px 24px 20px;
+    max-width: 320px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    border: 1.5px solid var(--pink-soft);
+    text-align: center;
+    animation: modal-in 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes modal-in {
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-title {
+    font-size: 17px;
+    font-weight: 900;
+    color: var(--pink-primary);
+    margin-bottom: 8px;
+    letter-spacing: 0.03em;
+    line-height: 1.4;
+  }
+
+  .modal-date {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin-bottom: 22px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .modal-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .modal-btn {
+    flex: 1;
+    max-width: 130px;
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    border: 1.5px solid;
+    transition: background-color 150ms ease, transform 80ms ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .modal-btn:active { transform: scale(0.96); }
+  .modal-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 77, 148, 0.35);
+  }
+
+  .modal-btn-no {
+    background: #fff;
+    color: var(--text-muted);
+    border-color: #e0d0d6;
+  }
+  .modal-btn-no:hover { background: #f5eef0; }
+
+  .modal-btn-yes {
+    background: var(--pink-primary);
+    color: #fff;
+    border-color: var(--pink-primary);
+  }
+  .modal-btn-yes:hover { background: #ff3a85; }
 
   /* === Footer === */
   .footer {
@@ -381,12 +485,19 @@
     .wd { font-size: 11px; }
     .cal-cell { font-size: 9.5px; padding: 2px 3px; }
     .cal-cell.today { padding: 1px 2px; }
+
+    .modal { padding: 22px 18px 18px; }
+    .modal-title { font-size: 16px; }
+    .modal-date { font-size: 14px; margin-bottom: 18px; }
+    .modal-btn { font-size: 14px; padding: 10px 12px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .stamp,
-    .cal-cell.stamped.animate .cal-stamp { transition: none; animation: none; }
-    .panel.active { animation: none; }
+    .cal-cell.stamped-pink.animate .cal-stamp { transition: none; animation: none; }
+    .panel.active,
+    .modal-overlay,
+    .modal { animation: none; }
     .item.checked .label { transition: none; }
   }
 </style>
@@ -433,11 +544,23 @@
     </footer>
   </main>
 
+  <!-- Manual stamp confirmation modal -->
+  <div class="modal-overlay" id="modal-overlay" hidden role="presentation">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h2 class="modal-title" id="modal-title">スタンプを押しますか？</h2>
+      <p class="modal-date" id="modal-date"></p>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-no"  id="modal-no">いいえ</button>
+        <button class="modal-btn modal-btn-yes" id="modal-yes">はい</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 (function () {
   'use strict';
 
-  // ====== Config (edit here to change items or calendar range) ======
+  // ====== Config ======
   const ITEMS = [
     'こよの曲を聴く',
     'こよのShorts見る',
@@ -452,21 +575,22 @@
   const STORAGE_VERSION = 2;
   const TAB_TODO = 'todo';
   const TAB_STAMP = 'stamp';
-  const AUTO_SWITCH_DELAY_MS = 400; // wait for stamp animation before switching
-  // ===================================================================
+  const AUTO_SWITCH_DELAY_MS = 400;
+  // =====================
 
   let state = null;
   let activeTab = TAB_TODO;
   let storageAvailable = true;
+  let modalCleanup = null;
 
-  // ====== JST date helpers (no DST, fixed UTC+9) ======
+  // ====== JST date helpers ======
   function getJSTParts() {
     const shifted = new Date(Date.now() + 9 * 60 * 60 * 1000);
     return {
       y:   shifted.getUTCFullYear(),
       m:   shifted.getUTCMonth() + 1,
       d:   shifted.getUTCDate(),
-      dow: shifted.getUTCDay() // 0=Sun..6=Sat
+      dow: shifted.getUTCDay()
     };
   }
 
@@ -479,6 +603,13 @@
     const p = getJSTParts();
     const dows = ['日', '月', '火', '水', '木', '金', '土'];
     return p.y + '年' + p.m + '月' + p.d + '日（' + dows[p.dow] + '）';
+  }
+
+  function dowFromDateString(dateStr) {
+    const parts = dateStr.split('-');
+    const dt = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
+    const dows = ['日', '月', '火', '水', '木', '金', '土'];
+    return dows[dt.getUTCDay()];
   }
 
   // ====== Calendar range helpers ======
@@ -502,7 +633,7 @@
     let cur = start;
     while (cur.getTime() <= end.getTime()) {
       out.push(formatDate(cur));
-      cur = new Date(cur.getTime() + 86400000); // +1 day
+      cur = new Date(cur.getTime() + 86400000);
     }
     return out;
   }
@@ -518,6 +649,17 @@
     };
   }
 
+  // Normalize a calendar object so every value is the literal `true`.
+  // Anything else (including unexpected strings) is dropped.
+  function normalizeCalendar(cal) {
+    const out = {};
+    if (!cal || typeof cal !== 'object') return out;
+    Object.keys(cal).forEach(function (k) {
+      if (cal[k] === true) out[k] = true;
+    });
+    return out;
+  }
+
   function migrateV1ToV2(v1) {
     if (
       !v1 ||
@@ -531,14 +673,13 @@
     const allChecked = v1.checked.every(function (c) { return c === true; });
 
     const calendar = {};
-    // Preserve the v1 achievement on the calendar if it was a full 5-stamp day within range
     if (allChecked && isInCalendarRange(v1.date)) {
       calendar[v1.date] = true;
     }
 
     if (v1.date === today) {
       return {
-        v: STORAGE_VERSION,
+        v: 2,
         date: today,
         checked: v1.checked.slice(),
         switched: allChecked,
@@ -546,7 +687,7 @@
       };
     }
     return {
-      v: STORAGE_VERSION,
+      v: 2,
       date: today,
       checked: ITEMS.map(function () { return false; }),
       switched: false,
@@ -577,6 +718,7 @@
       let parsed = null;
       try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
 
+      // v1 -> v2 migration
       if (parsed && parsed.v === 1) {
         state = migrateV1ToV2(parsed);
         saveState();
@@ -586,8 +728,13 @@
       const valid = validateV2(parsed);
       if (valid) {
         const today = getJSTDateString();
+        // Normalize defensively (drops unexpected calendar values)
+        const normalized = normalizeCalendar(valid.calendar);
+        const calendarChanged = Object.keys(normalized).length !== Object.keys(valid.calendar).length;
+        valid.calendar = normalized;
         if (valid.date === today) {
           state = valid;
+          if (calendarChanged) saveState(); // persist cleanup only if we dropped anything
           return;
         }
         // Different day: reset checks/switched, preserve calendar
@@ -682,8 +829,18 @@
     dates.forEach(function (dateStr) {
       const cell = document.createElement('div');
       cell.className = 'cal-cell';
+      cell.dataset.date = dateStr;
+
       if (dateStr === today) cell.classList.add('today');
-      if (state.calendar[dateStr]) cell.classList.add('stamped');
+
+      const stamped = !!state.calendar[dateStr];
+      if (stamped) cell.classList.add('stamped-pink');
+
+      // Clickable: past, in range, not yet stamped
+      if (dateStr < today && !stamped) {
+        cell.classList.add('clickable');
+        cell.addEventListener('click', function () { handleCellClick(dateStr); });
+      }
 
       const labelEl = document.createElement('span');
       labelEl.className = 'cal-date';
@@ -705,6 +862,10 @@
     renderCalendar();
   }
 
+  function findCalendarCell(dateStr) {
+    return document.querySelector('.cal-cell[data-date="' + dateStr + '"]');
+  }
+
   // ====== Tab switching ======
   function setActiveTab(tabId) {
     if (activeTab === tabId) return;
@@ -716,8 +877,7 @@
       t.setAttribute('aria-selected', isActive ? 'true' : 'false');
     });
 
-    const panels = document.getElementById('panels');
-    panels.classList.toggle('right-active', tabId === TAB_STAMP);
+    document.getElementById('panels').classList.toggle('right-active', tabId === TAB_STAMP);
 
     document.querySelectorAll('.panel').forEach(function (p) {
       p.classList.toggle('active', p.dataset.tab === tabId);
@@ -725,15 +885,15 @@
   }
 
   function animateTodayStamp() {
-    const cell = document.querySelector('.cal-cell.today.stamped');
+    const cell = document.querySelector('.cal-cell.today.stamped-pink');
     if (!cell) return;
     cell.classList.remove('animate');
-    void cell.offsetWidth; // force reflow so animation restarts
+    void cell.offsetWidth;
     cell.classList.add('animate');
     setTimeout(function () { cell.classList.remove('animate'); }, 400);
   }
 
-  // ====== Achievement detection ======
+  // ====== Achievement detection (pink stamp) ======
   function checkAchievement(triggeredByClick) {
     if (!state || state.switched) return;
     const allChecked = state.checked.every(function (c) { return c === true; });
@@ -747,7 +907,6 @@
       recorded = true;
     }
     saveState();
-
     renderCalendar();
 
     if (triggeredByClick && recorded) {
@@ -756,6 +915,84 @@
         requestAnimationFrame(animateTodayStamp);
       }, AUTO_SWITCH_DELAY_MS);
     }
+  }
+
+  // ====== Cell click handler ======
+  function handleCellClick(dateStr) {
+    const today = getJSTDateString();
+    if (dateStr >= today) return;
+    if (state.calendar[dateStr]) return; // already stamped
+    showStampModal(dateStr);
+  }
+
+  // ====== Modal ======
+  function showStampModal(dateStr) {
+    if (modalCleanup) modalCleanup();
+
+    const overlay = document.getElementById('modal-overlay');
+    const titleEl = document.getElementById('modal-title');
+    const dateEl  = document.getElementById('modal-date');
+    const noBtn   = document.getElementById('modal-no');
+    const yesBtn  = document.getElementById('modal-yes');
+
+    const parts = dateStr.split('-');
+    const monthDay = (+parts[1]) + '月' + (+parts[2]) + '日';
+    const dow = dowFromDateString(dateStr);
+    titleEl.textContent = 'スタンプを押しますか？';
+    dateEl.textContent = monthDay + '（' + dow + '）';
+
+    const lastFocus = document.activeElement;
+    overlay.hidden = false;
+    // Focus 「いいえ」by default for safety
+    requestAnimationFrame(function () { noBtn.focus(); });
+
+    function close() {
+      overlay.hidden = true;
+      document.removeEventListener('keydown', escHandler);
+      overlay.removeEventListener('click', overlayHandler);
+      yesBtn.removeEventListener('click', yesHandler);
+      noBtn.removeEventListener('click', noHandler);
+      modalCleanup = null;
+      if (lastFocus && typeof lastFocus.focus === 'function') {
+        try { lastFocus.focus(); } catch (e) {}
+      }
+    }
+    function yesHandler() {
+      close();
+      addManualStamp(dateStr);
+    }
+    function noHandler() {
+      close();
+    }
+    function overlayHandler(e) {
+      if (e.target === overlay) close();
+    }
+    function escHandler(e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+      }
+    }
+
+    yesBtn.addEventListener('click', yesHandler);
+    noBtn.addEventListener('click', noHandler);
+    overlay.addEventListener('click', overlayHandler);
+    document.addEventListener('keydown', escHandler);
+
+    modalCleanup = close;
+  }
+
+  function addManualStamp(dateStr) {
+    state.calendar[dateStr] = true;
+    saveState();
+    renderCalendar();
+    requestAnimationFrame(function () {
+      const cell = findCalendarCell(dateStr);
+      if (cell) {
+        cell.classList.add('animate');
+        setTimeout(function () { cell.classList.remove('animate'); }, 400);
+      }
+    });
   }
 
   // ====== Daily reset check ======
