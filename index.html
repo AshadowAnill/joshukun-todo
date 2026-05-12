@@ -94,7 +94,8 @@
   }
 
   .title {
-    font-size: 26px;
+    /* clamp 流体化: W320 で 19px, W500+ で 26px に連続スケール */
+    font-size: clamp(19px, calc(4vw + 6px), 26px);
     font-weight: 900;
     color: var(--pink-primary);
     letter-spacing: 0.04em;
@@ -107,11 +108,14 @@
   .title::after {
     content: '♡';
     color: var(--pink-soft);
-    font-size: 16px;
+    /* em ベースで title font-size に連動（現状の 16/26 ≈ 0.615 を踏襲） */
+    font-size: 0.62em;
     font-weight: 700;
-    margin: 0 8px;
     vertical-align: 4px;
   }
+  /* 外側 margin = 0、内側 margin = 0.3em（現状の 8/26 ≈ 0.308 を踏襲） */
+  .title::before { margin-left: 0; margin-right: 0.3em; }
+  .title::after  { margin-left: 0.3em; margin-right: 0; }
 
   .date {
     font-size: 14px;
@@ -468,8 +472,7 @@
   @media (max-width: 380px) {
     body { padding: 18px 10px 30px; }
     .container { padding: 26px 16px 22px; border-radius: 18px; }
-    .title { font-size: 22px; }
-    .title::before, .title::after { font-size: 14px; margin: 0 6px; }
+    /* .title 系は clamp / em で連続スケールするため、mobile クエリでの上書き不要 */
     .date { font-size: 13px; }
 
     .tab { padding: 9px 8px; font-size: 13px; }
